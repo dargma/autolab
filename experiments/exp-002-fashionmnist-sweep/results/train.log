@@ -2,3 +2,29 @@
    Constraint: ≤100ms latency (batch_size=1)
    Epochs: 10
 
+  ✅ tiny-fc: acc=0.8776, latency=18.03ms, params=101770
+  ✅ deep-fc: acc=0.8756, latency=13.11ms, params=111146
+  ✅ micro-cnn: acc=0.8886, latency=21.11ms, params=38210
+  ✅ minimal-cnn: acc=0.8922, latency=7.67ms, params=26138
+  ✅ tiny-cnn: acc=0.9024, latency=0.75ms, params=204778
+  ✅ depthwise-cnn: acc=0.8941, latency=0.92ms, params=102074
+  ✅ big-cnn: acc=0.9154, latency=0.40ms, params=813258
+  ✅ wide-fc: acc=0.8866, latency=21.65ms, params=218058
+
+============================================================
+📊 Results: 8 passed / 0 failed constraint
+============================================================
+
+🏆 Best: big-cnn — accuracy=0.9154, latency=0.40ms
+
+Ranking (by accuracy, constraint-passing only):
+  1. big-cnn               acc=0.9154  lat=0.40ms  params=813258
+  2. tiny-cnn              acc=0.9024  lat=0.75ms  params=204778
+  3. depthwise-cnn         acc=0.8941  lat=0.92ms  params=102074
+  4. minimal-cnn           acc=0.8922  lat=7.67ms  params=26138
+  5. micro-cnn             acc=0.8886  lat=21.11ms  params=38210
+  6. wide-fc               acc=0.8866  lat=21.65ms  params=218058
+  7. tiny-fc               acc=0.8776  lat=18.03ms  params=101770
+  8. deep-fc               acc=0.8756  lat=13.11ms  params=111146
+
+📁 Results saved to /content/drive/MyDrive/autolab/experiments/exp-002-fashionmnist-sweep/results/sweep-20260317-161120.csv

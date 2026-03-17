@@ -1,0 +1,99 @@
+{
+  "dataset": "FashionMNIST",
+  "total": 8,
+  "passing": 8,
+  "failing": 0,
+  "best": {
+    "name": "big-cnn",
+    "params": 813258,
+    "accuracy": 0.9154,
+    "avg_latency_ms": 0.403,
+    "p99_latency_ms": 0.606,
+    "train_time_s": 2702.5,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  "ranking": [
+    {
+      "name": "big-cnn",
+      "params": 813258,
+      "accuracy": 0.9154,
+      "avg_latency_ms": 0.403,
+      "p99_latency_ms": 0.606,
+      "train_time_s": 2702.5,
+      "meets_constraint": true,
+      "status": "ok"
+    },
+    {
+      "name": "tiny-cnn",
+      "params": 204778,
+      "accuracy": 0.9024,
+      "avg_latency_ms": 0.753,
+      "p99_latency_ms": 3.44,
+      "train_time_s": 2680.0,
+      "meets_constraint": true,
+      "status": "ok"
+    },
+    {
+      "name": "depthwise-cnn",
+      "params": 102074,
+      "accuracy": 0.8941,
+      "avg_latency_ms": 0.919,
+      "p99_latency_ms": 3.702,
+      "train_time_s": 2687.9,
+      "meets_constraint": true,
+      "status": "ok"
+    },
+    {
+      "name": "minimal-cnn",
+      "params": 26138,
+      "accuracy": 0.8922,
+      "avg_latency_ms": 7.673,
+      "p99_latency_ms": 43.057,
+      "train_time_s": 2557.6,
+      "meets_constraint": true,
+      "status": "ok"
+    },
+    {
+      "name": "micro-cnn",
+      "params": 38210,
+      "accuracy": 0.8886,
+      "avg_latency_ms": 21.106,
+      "p99_latency_ms": 51.861,
+      "train_time_s": 2249.1,
+      "meets_constraint": true,
+      "status": "ok"
+    },
+    {
+      "name": "wide-fc",
+      "params": 218058,
+      "accuracy": 0.8866,
+      "avg_latency_ms": 21.648,
+      "p99_latency_ms": 57.029,
+      "train_time_s": 1905.0,
+      "meets_constraint": true,
+      "status": "ok"
+    },
+    {
+      "name": "tiny-fc",
+      "params": 101770,
+      "accuracy": 0.8776,
+      "avg_latency_ms": 18.028,
+      "p99_latency_ms": 33.996,
+      "train_time_s": 1519.0,
+      "meets_constraint": true,
+      "status": "ok"
+    },
+    {
+      "name": "deep-fc",
+      "params": 111146,
+      "accuracy": 0.8756,
+      "avg_latency_ms": 13.108,
+      "p99_latency_ms": 40.017,
+      "train_time_s": 2047.3,
+      "meets_constraint": true,
+      "status": "ok"
+    }
+  ],
+  "eliminated": []
+}

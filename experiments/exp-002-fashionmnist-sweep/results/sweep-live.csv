@@ -1,0 +1,9 @@
+name,params,accuracy,avg_latency_ms,p99_latency_ms,train_time_s,meets_constraint,status
+tiny-fc,101770,0.8776,18.028,33.996,1519.0,True,ok
+wide-fc,218058,0.8866,21.648,57.029,1905.0,True,ok
+deep-fc,111146,0.8756,13.108,40.017,2047.3,True,ok
+micro-cnn,38210,0.8886,21.106,51.861,2249.1,True,ok
+minimal-cnn,26138,0.8922,7.673,43.057,2557.6,True,ok
+tiny-cnn,204778,0.9024,0.753,3.44,2680.0,True,ok
+depthwise-cnn,102074,0.8941,0.919,3.702,2687.9,True,ok
+big-cnn,813258,0.9154,0.403,0.606,2702.5,True,ok
