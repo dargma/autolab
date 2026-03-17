@@ -1,0 +1,82 @@
+[
+  {
+    "name": "tiny-fc",
+    "params": 101770,
+    "accuracy": 0.9773,
+    "avg_latency_ms": 22.605,
+    "p99_latency_ms": 42.015,
+    "train_time_s": 903.8,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  {
+    "name": "tiny-cnn",
+    "params": 204778,
+    "accuracy": 0.989,
+    "avg_latency_ms": 0.889,
+    "p99_latency_ms": 4.406,
+    "train_time_s": 1725.5,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  {
+    "name": "depthwise-cnn",
+    "params": 102074,
+    "accuracy": 0.9831,
+    "avg_latency_ms": 1.217,
+    "p99_latency_ms": 9.47,
+    "train_time_s": 1732.5,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  {
+    "name": "minimal-cnn",
+    "params": 26138,
+    "accuracy": 0.9818,
+    "avg_latency_ms": 41.4,
+    "p99_latency_ms": 87.967,
+    "train_time_s": 1619.7,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  {
+    "name": "wide-fc",
+    "params": 218058,
+    "accuracy": 0.9788,
+    "avg_latency_ms": 17.557,
+    "p99_latency_ms": 41.726,
+    "train_time_s": 1150.8,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  {
+    "name": "deep-fc",
+    "params": 111146,
+    "accuracy": 0.973,
+    "avg_latency_ms": 16.547,
+    "p99_latency_ms": 29.965,
+    "train_time_s": 1224.4,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  {
+    "name": "big-cnn",
+    "params": 813258,
+    "accuracy": 0.9881,
+    "avg_latency_ms": 0.402,
+    "p99_latency_ms": 0.508,
+    "train_time_s": 1740.9,
+    "meets_constraint": true,
+    "status": "ok"
+  },
+  {
+    "name": "micro-cnn",
+    "params": 38210,
+    "accuracy": 0.9744,
+    "avg_latency_ms": 42.726,
+    "p99_latency_ms": 71.068,
+    "train_time_s": 1371.0,
+    "meets_constraint": true,
+    "status": "ok"
+  }
+]

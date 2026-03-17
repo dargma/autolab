@@ -1,0 +1,29 @@
+🔍 MNIST Architecture Sweep — 8 candidates, 8 workers
+   Constraint: ≤100ms latency (batch_size=1)
+
+  ✅ tiny-fc: acc=0.9773, latency=22.61ms, params=101770
+  ✅ deep-fc: acc=0.9730, latency=16.55ms, params=111146
+  ✅ micro-cnn: acc=0.9744, latency=42.73ms, params=38210
+  ✅ wide-fc: acc=0.9788, latency=17.56ms, params=218058
+  ✅ minimal-cnn: acc=0.9818, latency=41.40ms, params=26138
+  ✅ tiny-cnn: acc=0.9890, latency=0.89ms, params=204778
+  ✅ big-cnn: acc=0.9881, latency=0.40ms, params=813258
+  ✅ depthwise-cnn: acc=0.9831, latency=1.22ms, params=102074
+
+============================================================
+📊 Results: 8 passed / 0 failed constraint
+============================================================
+
+🏆 Best: tiny-cnn — accuracy=0.9890, latency=0.89ms
+
+Ranking (by accuracy, constraint-passing only):
+  1. tiny-cnn              acc=0.9890  lat=0.89ms  params=204778
+  2. big-cnn               acc=0.9881  lat=0.40ms  params=813258
+  3. depthwise-cnn         acc=0.9831  lat=1.22ms  params=102074
+  4. minimal-cnn           acc=0.9818  lat=41.40ms  params=26138
+  5. wide-fc               acc=0.9788  lat=17.56ms  params=218058
+  6. tiny-fc               acc=0.9773  lat=22.61ms  params=101770
+  7. micro-cnn             acc=0.9744  lat=42.73ms  params=38210
+  8. deep-fc               acc=0.9730  lat=16.55ms  params=111146
+
+📁 Results saved to /content/drive/MyDrive/autolab/experiments/exp-001-mnist-baseline-sweep/results/sweep-20260317-122838.csv

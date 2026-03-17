@@ -1,0 +1,45 @@
+task: mnist_arch_search
+constraint:
+  fps: 10
+  device: cpu
+  batch_size: 1
+  max_latency_ms: 100
+search:
+  parallel_workers: 8
+  metric: accuracy
+  budget: 600s
+  candidates:
+    - name: tiny-fc
+      type: fc
+      layers: [784, 128, 10]
+    - name: tiny-cnn
+      type: cnn
+      channels: [1, 8, 16]
+      fc: [256, 10]
+    - name: depthwise-cnn
+      type: depthwise
+      channels: [1, 8, 16]
+      fc: [128, 10]
+    - name: minimal-cnn
+      type: cnn
+      channels: [1, 4, 8]
+      fc: [64, 10]
+    - name: wide-fc
+      type: fc
+      layers: [784, 256, 64, 10]
+    - name: deep-fc
+      type: fc
+      layers: [784, 128, 64, 32, 10]
+    - name: big-cnn
+      type: cnn
+      channels: [1, 16, 32]
+      fc: [512, 10]
+    - name: micro-cnn
+      type: cnn
+      channels: [1, 4]
+      fc: [48, 10]
+train:
+  epochs: 5
+  lr: 0.001
+  optimizer: adam
+  seed: 42

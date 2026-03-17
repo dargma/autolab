@@ -1,0 +1,4 @@
+🔍 FashionMNIST Architecture Sweep — 8 candidates, 8 workers
+   Constraint: ≤100ms latency (batch_size=1)
+   Epochs: 10
+
