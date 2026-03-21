@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoLab Dashboard — mnist-cpu</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: #f5f5f5; color: #333; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 20px; color: #1a1a2e; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1400px; margin: 0 auto; }
+  .panel { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .panel h2 { font-size: 16px; color: #555; margin-bottom: 12px; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+  .full-width { grid-column: 1 / -1; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #f8f8f8; font-weight: 600; }
+  tr.done td:nth-child(3) { color: #27ae60; font-weight: bold; }
+  tr.running td:nth-child(3) { color: #f39c12; font-weight: bold; }
+  tr.failed td:nth-child(3) { color: #e74c3c; font-weight: bold; }
+  .best-card { text-align: center; padding: 30px; }
+  .best-card .value { font-size: 48px; font-weight: bold; color: #27ae60; }
+  .best-card .label { font-size: 14px; color: #777; margin-top: 4px; }
+  .best-card .name { font-size: 18px; margin-top: 8px; }
+  .status-bar { display: flex; gap: 20px; justify-content: center; align-items: center; }
+  .status-item { text-align: center; }
+  .status-item .val { font-size: 24px; font-weight: bold; }
+  .disk-ok { color: #27ae60; }
+  .disk-warn { color: #e74c3c; }
+  canvas { max-height: 350px; }
+</style>
+</head>
+<body>
+
+<h1>AutoLab Dashboard &mdash; mnist-cpu</h1>
+
+<div class="grid">
+
+  <!-- Best Result -->
+  <div class="panel best-card">
+    <h2>Current Best Result</h2>
+    <div class="value">98.90%</div>
+    <div class="label">Test Accuracy</div>
+    <div class="name">[001] tiny-cnn</div>
+    <div class="label">0.89ms latency</div>
+  </div>
+
+  <!-- Resource Status -->
+  <div class="panel">
+    <h2>Resource Status</h2>
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="val">2</div>
+        <div class="label">Experiments</div>
+      </div>
+      <div class="status-item">
+        <div class="val">2</div>
+        <div class="label">Completed</div>
+      </div>
+      <div class="status-item">
+        <div class="val disk-ok">OK</div>
+        <div class="label">Disk Status</div>
+      </div>
+      <div class="status-item">
+        <div class="val">1</div>
+        <div class="label">Ralph Iterations</div>
+      </div>
+    </div>
+    <br>
+    <div style="text-align:center;color:#999;font-size:12px;">
+      Target: 95% accuracy, 33.3ms latency
+    </div>
+  </div>
+
+  <!-- Experiment Tracker -->
+  <div class="panel full-width">
+    <h2>Experiment Tracker</h2>
+    <table>
+      <tr><th>#</th><th>Name</th><th>Status</th><th>Key Metric</th><th>Date</th><th>Notes</th></tr>
+      
+        <tr class="done">
+            <td>001</td>
+            <td>mnist-baseline-sweep</td>
+            <td>🟢done</td>
+            <td>98.90% (tiny-cnn)</td>
+            <td>2026-03-17</td>
+            <td>8/8 passed, best=tiny-cnn 0.89ms</td>
+        </tr>
+        <tr class="done">
+            <td>002</td>
+            <td>fashionmnist-sweep</td>
+            <td>🟢done</td>
+            <td>91.54% (big-cnn)</td>
+            <td>2026-03-17</td>
+            <td>8/8 passed, best=big-cnn 0.40ms</td>
+        </tr>
+    </table>
+  </div>
+
+  <!-- Accuracy Chart -->
+  <div class="panel">
+    <h2>Model Accuracy Comparison</h2>
+    <canvas id="accChart"></canvas>
+  </div>
+
+  <!-- Pareto Chart -->
+  <div class="panel">
+    <h2>Pareto: Accuracy vs Latency</h2>
+    <canvas id="paretoChart"></canvas>
+  </div>
+
+  <!-- Ralph-Loop Log -->
+  <div class="panel full-width">
+    <h2>Ralph-Loop Iteration Log</h2>
+    <table><tr><th>Iter</th><th>Strategy</th><th>Gap</th><th>Result</th><th>Reasoning</th></tr>
+        <tr>
+            <td>0</td>
+            <td>GoalMet</td>
+            <td>{'accuracy': -0.039, 'avg_latency_ms': -32.411}</td>
+            <td>Best: tiny-cnn acc=0.9890</td>
+            <td>All target metrics satisfied. Generating final report.</td>
+        </tr></table>
+  </div>
+
+</div>
+
+<script>
+const names = ["[001] tiny-cnn", "[001] big-cnn", "[001] depthwise-cnn", "[001] minimal-cnn", "[001] wide-fc", "[001] tiny-fc", "[001] micro-cnn", "[001] deep-fc", "[002] big-cnn", "[002] tiny-cnn", "[002] depthwise-cnn", "[002] minimal-cnn", "[002] micro-cnn", "[002] wide-fc", "[002] tiny-fc", "[002] deep-fc"];
+const accs = [98.9, 98.81, 98.31, 98.18, 97.88, 97.72999999999999, 97.44, 97.3, 91.53999999999999, 90.24, 89.41, 89.22, 88.86, 88.66000000000001, 87.76, 87.56];
+const lats = [0.889, 0.402, 1.217, 41.4, 17.557, 22.605, 42.726, 16.547, 0.403, 0.753, 0.919, 7.673, 21.106, 21.648, 18.028, 13.108];
+const targetAcc = 95.0;
+
+// Accuracy bar chart
+new Chart(document.getElementById('accChart'), {
+  type: 'bar',
+  data: {
+    labels: names,
+    datasets: [{
+      label: 'Accuracy (%)',
+      data: accs,
+      backgroundColor: accs.map(a => a >= targetAcc ? '#27ae60' : '#3498db'),
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      annotation: { annotations: { target: { type: 'line', yMin: targetAcc, yMax: targetAcc, borderColor: 'red', borderDash: [5,5] } } }
+    },
+    scales: {
+      x: { ticks: { maxRotation: 45 } },
+      y: { beginAtZero: false, min: Math.max(0, Math.min(...accs) - 5) }
+    }
+  }
+});
+
+// Pareto scatter
+new Chart(document.getElementById('paretoChart'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Models',
+      data: names.map((n, i) => ({ x: lats[i], y: accs[i] })),
+      backgroundColor: '#3498db',
+      pointRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      x: { title: { display: true, text: 'Latency (ms)' } },
+      y: { title: { display: true, text: 'Accuracy (%)' }, beginAtZero: false }
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: function(ctx) {
+            return names[ctx.dataIndex] + ': ' + accs[ctx.dataIndex].toFixed(2) + '%, ' + lats[ctx.dataIndex].toFixed(2) + 'ms';
+          }
+        }
+      }
+    }
+  }
+});
+</script>
+
+<footer style="text-align:center;color:#999;font-size:11px;margin-top:20px;">
+  Generated by autolab v0.1.0 at 2026-03-21 14:55:51
+</footer>
+
+</body>
+</html>

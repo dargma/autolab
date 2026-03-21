@@ -18,6 +18,7 @@
 - [exp-002] Accuracy gap CNN vs FC widens on FashionMNIST: ~4pp (vs ~1pp on MNIST)
 - [exp-002] More params helps more on harder data: big-cnn (813K) overtakes tiny-cnn (205K)
 
+- [ralph] Goal met at iteration 0: tiny-cnn acc=0.9890, lat=0.89ms
 ## Hypotheses
 <!-- Unverified claims and predictions -->
 - ~~Very small CNNs (< 50K params) should easily meet 10fps~~ → CONFIRMED (exp-001: 26K@41ms)

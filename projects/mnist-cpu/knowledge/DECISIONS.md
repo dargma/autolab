@@ -15,3 +15,9 @@
 - Before: No active experiment
 - After: Find optimal MNIST classifier under 10fps CPU constraint
 - Impact: First use of multi-CPU sweep protocol
+
+### 2026-03-21: Restructure into reusable autolab package + project scaffold
+- Reason: Code was duplicated between exp-001 and exp-002; no shared framework, no autonomous loop, no dashboard
+- Before: Standalone sweep.py per experiment, no package structure, no ralph-loop
+- After: autolab/ Python package (models, data, sweep, ralph, dashboard, figures, knowledge), projects/mnist-cpu/ scaffold with goal.yaml, ralph-loop autonomous iteration engine
+- Impact: All future experiments use shared framework. Existing exp-001/002 migrated to projects/mnist-cpu/
