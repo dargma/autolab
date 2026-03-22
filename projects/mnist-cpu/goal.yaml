@@ -1,6 +1,0 @@
-metrics:
-  accuracy: {target: 0.989, direction: maximize}
-  avg_latency_ms: {target: 0.50, direction: minimize}
-dataset: MNIST
-stop_when: all_met
-max_iterations: 10

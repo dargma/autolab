@@ -1,4 +1,19 @@
-data/
-.opencode/
+# Compiled C libraries (auto-compiled on first use)
+*.so
+
+# Python bytecode
 __pycache__/
 *.pyc
+
+# Downloaded datasets
+data/
+
+# Model checkpoints (keep in project results/ only)
+*.pt
+*.pth
+
+# IDE / OS
+.opencode/
+.vscode/
+.idea/
+.DS_Store

@@ -1,5 +1,0 @@
-name,params,accuracy,avg_latency_ms,p99_latency_ms,train_time_s,meets_constraint,status
-bn-cnn-16-32,813354,0.996,111.946,185.349,5370.0,False,ok
-bn-cnn-16-32-drop,813354,0.9954,114.895,190.718,5635.8,False,ok
-se-cnn-16-32,814054,0.9949,132.705,198.928,6619.1,False,ok
-res-cnn-16-32,825594,0.997,210.343,323.612,11654.0,False,ok
