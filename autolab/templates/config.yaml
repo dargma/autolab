@@ -1,0 +1,57 @@
+# config.yaml — Search space and training configuration.
+#
+# task:       Descriptive name for this search
+# dataset:    Must match goal.yaml
+# constraint: Models that violate these are discarded
+# search:     Candidate models to evaluate
+# train:      Training hyperparameters (shared across candidates)
+
+task: arch_search
+dataset: MNIST
+
+constraint:
+  fps: 200                # Minimum frames per second
+  device: cpu             # cpu or cuda
+  batch_size: 1           # Batch size for latency measurement
+  max_latency_ms: 5.0     # Maximum average latency per sample
+
+search:
+  parallel_workers: 4     # Number of parallel training processes
+  metric: accuracy        # Primary metric to rank candidates
+  budget: 600s            # Time budget for the full sweep
+  candidates:
+    # Each candidate needs: name, type, and type-specific params.
+    # Built-in types: fc, cnn, cnn_bn, residual_cnn,
+    #   squeeze_excite_cnn, depthwise, ternary_cnn, ternary_hybrid_cnn
+    #
+    # Register custom types in models.py with @register("my_type")
+
+    - name: baseline-fc
+      type: fc
+      layers: [784, 256, 10]
+
+    - name: small-cnn
+      type: cnn
+      channels: [1, 16, 32]
+      fc: [128, 10]
+
+    - name: big-cnn
+      type: cnn
+      channels: [1, 32, 64]
+      fc: [512, 10]
+
+    - name: cnn-batchnorm
+      type: cnn_bn
+      channels: [1, 16, 32]
+      fc: [128, 10]
+
+train:
+  epochs: 5               # Training epochs per candidate
+  lr: 0.001               # Learning rate
+  optimizer: adam          # adam, adamw, sgd
+  scheduler: none         # none, cosine, onecycle
+  label_smoothing: 0.0    # 0.0 to disable
+  augmentation: false     # Random affine + erasing
+  jit: false              # TorchScript compilation for inference
+  weight_decay: 0.0
+  seed: 42

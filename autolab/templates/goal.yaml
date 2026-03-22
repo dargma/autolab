@@ -1,0 +1,22 @@
+# goal.yaml — Define what "done" looks like.
+#
+# metrics:
+#   Each metric has a target value and direction (maximize or minimize).
+#   Autolab stops when all targets are met (stop_when: all_met)
+#   or when any single target is met (stop_when: any_met).
+#
+# dataset:
+#   Name of the dataset (must match autolab's data registry).
+#   Built-in: MNIST, FashionMNIST, CIFAR10, CIFAR100
+#
+# max_iterations:
+#   Safety limit — ralph-loop stops after this many iterations
+#   even if goals aren't met.
+
+metrics:
+  accuracy: {target: 0.95, direction: maximize}
+  # avg_latency_ms: {target: 5.0, direction: minimize}
+
+dataset: MNIST
+stop_when: all_met
+max_iterations: 10
