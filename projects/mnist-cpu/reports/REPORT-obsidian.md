@@ -27,6 +27,389 @@ best_latency: 0.485ms
 
 ---
 
+## Research Thinking Flow
+
+> [!map] Full Decision Graph
+> How each insight led to the next action — from initial sweep to final ternary solution.
+
+```mermaid
+flowchart TD
+    subgraph Phase1["Phase 1: Architecture Search"]
+        A["Start: 95% acc, 33.3ms target"] --> B["Sweep 8 architectures
+        FC / CNN / Depthwise"]
+        B --> C{"All 8 pass?"}
+        C -->|"Yes: 97.3%–98.9%"| D["Exp-001: tiny-cnn wins
+        98.90% / 0.89ms"]
+        D --> E["Cross-validate on
+        FashionMNIST"]
+        E --> F["Exp-002: big-cnn wins
+        91.54% — ranking shift"]
+        F --> G["Insight: capacity matters
+        more on harder tasks"]
+        D --> H["Goal trivially met
+        37x latency headroom"]
+    end
+
+    subgraph Tighten["Goal Tightening"]
+        H --> I["Tighten: 98.9% acc
+        + 0.50ms latency"]
+        I --> J{"Any model meets both?"}
+        J -->|"No"| K["tiny-cnn: acc OK, lat 0.89ms
+        big-cnn: lat OK, acc 98.81%"]
+    end
+
+    subgraph Phase2["Phase 2: Ternary Quantization"]
+        K --> L["Idea: Ternary weights
+        {-1, 0, +1}"]
+        L --> M["Key insight: matmul =
+        pure add/sub in hardware"]
+        M --> N["Build C inference engine"]
+        N --> O["v1: naive C, per-layer
+        ~1.2ms — too slow"]
+        O --> P["v2: bit-packed, single call
+        3.6ms — im2col bottleneck"]
+        P --> Q["v3: direct accum, int16
+        zero-skip → 0.485ms"]
+        L --> R["Train ternary_cnn
+        STE + AdamW + cosine"]
+        R --> S["99.14% accuracy
+        103K params"]
+        Q --> T{"Both targets met?"}
+        S --> T
+        T -->|"Yes"| U["GOAL MET
+        99.14% / 0.485ms"]
+    end
+
+    subgraph Future["Future Work"]
+        U --> V["Knowledge Distillation
+        teacher → ternary student"]
+        U --> W["Zero-skipping optimization
+        skip 35-45% of ops"]
+        U --> X["FPGA/ASIC deployment
+        adder-only hardware"]
+    end
+
+    style A fill:#4a90d9,color:#fff
+    style U fill:#27ae60,color:#fff,stroke-width:3px
+    style K fill:#e74c3c,color:#fff
+    style M fill:#f39c12,color:#fff
+    style Q fill:#27ae60,color:#fff
+    style S fill:#27ae60,color:#fff
+```
+
+### Insight Chain
+
+```mermaid
+flowchart LR
+    subgraph Insights["Key Insights → Actions"]
+        I1["CNN > FC by ~1pp
+        on MNIST"] --> A1["Focus on CNN
+        architectures"]
+        I2["PyTorch overhead
+        dominates tiny models"] --> A2["Bypass PyTorch
+        entirely"]
+        I3["Ternary matmul =
+        add/sub only"] --> A3["Custom C engine
+        with int16 FP"]
+        I4["~40% weights are zero
+        after ternarization"] --> A4["Zero-skipping
+        in inner loop"]
+        I5["Ternary acts as
+        regularizer"] --> A5["Ternary accuracy
+        exceeds float32"]
+    end
+
+    style I1 fill:#3498db,color:#fff
+    style I2 fill:#3498db,color:#fff
+    style I3 fill:#e67e22,color:#fff
+    style I4 fill:#e67e22,color:#fff
+    style I5 fill:#9b59b6,color:#fff
+    style A1 fill:#2ecc71,color:#fff
+    style A2 fill:#2ecc71,color:#fff
+    style A3 fill:#2ecc71,color:#fff
+    style A4 fill:#2ecc71,color:#fff
+    style A5 fill:#2ecc71,color:#fff
+```
+
+### C Engine Evolution
+
+```mermaid
+flowchart TD
+    subgraph Evolution["Engine Optimization Path"]
+        V1["v1: Naive C
+        float weights, per-layer ctypes
+        ~1.2ms"] -->|"Bottleneck: Python↔C overhead"| V2
+        V2["v2: Single C call
+        bit-packed pos/neg masks
+        3.6ms"] -->|"Bottleneck: im2col copy"| V3
+        V3["v3: Direct accumulation
+        int16 Q8.8, int8 weights
+        0.485ms"] -->|"Enhancement: zero-skip"| V3Z
+        V3Z["v3+: Zero-skipping
+        skip ~40% of ops
+        ≤0.485ms"]
+    end
+
+    V1 -.->|"Lesson: minimize
+    language boundary crossings"| L1["Single C call
+    for full forward pass"]
+    V2 -.->|"Lesson: memory copy
+    > bit manipulation savings"| L2["Direct accumulation
+    beats im2col"]
+    V3 -.->|"Lesson: simpler
+    data format often faster"| L3["int8 weights beat
+    bit-packed format"]
+
+    style V1 fill:#e74c3c,color:#fff
+    style V2 fill:#e67e22,color:#fff
+    style V3 fill:#27ae60,color:#fff
+    style V3Z fill:#1abc9c,color:#fff
+    style L1 fill:#ecf0f1,color:#333
+    style L2 fill:#ecf0f1,color:#333
+    style L3 fill:#ecf0f1,color:#333
+```
+
+### Inference Datapath
+
+```mermaid
+flowchart LR
+    subgraph Datapath["Ternary Inference Datapath (zero multiplications)"]
+        IN["Input
+        28x28 int16"] --> C1["TernaryConv 3x3
+        add/sub only
+        8 filters"]
+        C1 --> BN1["Fused BN+ReLU
+        scale + shift + clamp"]
+        BN1 --> MP1["MaxPool 2x2
+        → 14x14"]
+        MP1 --> C2["TernaryConv 3x3
+        add/sub only
+        16 filters"]
+        C2 --> BN2["Fused BN+ReLU"]
+        BN2 --> MP2["MaxPool 2x2
+        → 7x7"]
+        MP2 --> FL["Flatten
+        16×7×7 = 784"]
+        FL --> FC1["TernaryFC
+        784→128
+        add/sub only"]
+        FC1 --> RL["ReLU"]
+        RL --> FC2["TernaryFC
+        128→10
+        add/sub only"]
+        FC2 --> OUT["Output
+        10 logits"]
+    end
+
+    subgraph Hardware["Hardware Requirements"]
+        H1["Adder ✅"]
+        H2["Shift register ✅
+        (alpha scaling)"]
+        H3["Comparator ✅
+        (ReLU, MaxPool)"]
+        H4["Multiplier ❌
+        NOT NEEDED"]
+    end
+
+    style IN fill:#3498db,color:#fff
+    style OUT fill:#27ae60,color:#fff
+    style C1 fill:#e67e22,color:#fff
+    style C2 fill:#e67e22,color:#fff
+    style FC1 fill:#e67e22,color:#fff
+    style FC2 fill:#e67e22,color:#fff
+    style H4 fill:#e74c3c,color:#fff
+    style H1 fill:#27ae60,color:#fff
+    style H2 fill:#27ae60,color:#fff
+    style H3 fill:#27ae60,color:#fff
+```
+
+### Ideation Thinking Flow
+
+> [!brain] How ideas were generated, evaluated, fused, and selected
+
+```mermaid
+flowchart TD
+    subgraph Ideation["Ideation Phase"]
+        PROB["Problem: Need 98.9% acc
+        AND 0.50ms latency"] --> BRAIN["Brainstorm
+        Architecture Ideas"]
+
+        BRAIN --> SAFE1["Safe: Bigger CNN
+        [16,32]+FC512
+        ★☆☆ Novelty"]
+        BRAIN --> SAFE2["Safe: Add BatchNorm
+        to existing CNN
+        ★☆☆ Novelty"]
+        BRAIN --> BOLD1["Bold: Ternary Quantization
+        weights = {-1, 0, +1}
+        ★★★ Novelty"]
+        BRAIN --> BOLD2["Bold: Knowledge Distillation
+        teacher → tiny student
+        ★★☆ Novelty"]
+        BRAIN --> CROSS["Cross-domain: FPGA-style
+        adder-only datapath in C
+        ★★★ Novelty"]
+    end
+
+    subgraph Evaluate["Evaluation"]
+        SAFE1 --> E1{"Meets latency?"}
+        E1 -->|"0.40ms ✅ but
+        acc 98.81% ❌"| REJ1["Rejected: accuracy gap"]
+
+        SAFE2 --> E2{"Worth trying?"}
+        E2 -->|"Exp-003 OOM"| REJ2["Failed: Colab memory"]
+
+        BOLD1 --> E3{"Feasibility?"}
+        E3 -->|"TWN proven
+        (Li et al. 2016)"| ACC1["Accepted ✅"]
+
+        BOLD2 --> E4{"Can boost accuracy?"}
+        E4 -->|"Teacher 98.90% →
+        Student ternary"| ACC2["Accepted ✅
+        (planned)"]
+
+        CROSS --> E5{"Novel fusion?"}
+        E5 -->|"Combine ternary +
+        C engine + int16"| FUSION["FUSION ✅"]
+    end
+
+    subgraph Fusion["Idea Fusion"]
+        ACC1 --> F1["Ternary CNN
+        (no multiplications)"]
+        FUSION --> F2["Custom C engine
+        (int16 fixed-point)"]
+        F1 --> COMBINE["Combined: Ternary CNN
+        + adder-only C engine
+        + zero-skipping"]
+        F2 --> COMBINE
+        ACC2 --> KD["KD: teach ternary
+        from full-precision"]
+        COMBINE --> WINNER["Winner: 99.14% / 0.485ms
+        BOTH TARGETS MET"]
+        KD -.->|"Future: may push
+        past 99.2%"| WINNER
+    end
+
+    subgraph Rejected["Rejected Ideas (with rationale)"]
+        R1["Depthwise separable
+        ❌ No advantage at MNIST scale"]
+        R2["Bit-packed weights (v2)
+        ❌ Slower than int8 due to
+        im2col copy overhead"]
+        R3["PyTorch JIT
+        ❌ Can't break 0.50ms floor"]
+        R4["Larger FC models
+        ❌ Accuracy ceiling ~97.9%"]
+    end
+
+    style PROB fill:#e74c3c,color:#fff
+    style WINNER fill:#27ae60,color:#fff,stroke-width:3px
+    style BOLD1 fill:#f39c12,color:#fff
+    style CROSS fill:#9b59b6,color:#fff
+    style FUSION fill:#9b59b6,color:#fff
+    style COMBINE fill:#1abc9c,color:#fff
+    style REJ1 fill:#95a5a6,color:#fff
+    style REJ2 fill:#95a5a6,color:#fff
+    style R1 fill:#bdc3c7,color:#333
+    style R2 fill:#bdc3c7,color:#333
+    style R3 fill:#bdc3c7,color:#333
+    style R4 fill:#bdc3c7,color:#333
+```
+
+```mermaid
+flowchart LR
+    subgraph Selection["Idea Selection Matrix"]
+        direction TB
+        H1["Idea"] --> H2["Novelty"] --> H3["Feasibility"] --> H4["Verdict"]
+
+        I1["Bigger CNN"] --> N1["★☆☆"] --> F1["★★★"] --> V1["❌ Acc gap"]
+        I2["BatchNorm CNN"] --> N2["★☆☆"] --> F2["★★★"] --> V2["❌ OOM"]
+        I3["Residual CNN"] --> N3["★★☆"] --> F3["★★☆"] --> V3["❌ OOM"]
+        I4["Ternary TWN"] --> N4["★★★"] --> F4["★★☆"] --> V4["✅ Winner"]
+        I5["C Engine"] --> N5["★★★"] --> F5["★★☆"] --> V5["✅ Fused"]
+        I6["Distillation"] --> N6["★★☆"] --> F6["★★★"] --> V6["⏳ Planned"]
+        I7["SE Attention"] --> N7["★★☆"] --> F7["★★☆"] --> V7["❌ OOM"]
+    end
+
+    style V4 fill:#27ae60,color:#fff
+    style V5 fill:#27ae60,color:#fff
+    style V6 fill:#f39c12,color:#fff
+    style V1 fill:#e74c3c,color:#fff
+    style V2 fill:#e74c3c,color:#fff
+    style V3 fill:#e74c3c,color:#fff
+    style V7 fill:#e74c3c,color:#fff
+```
+
+### Ralph-Loop Autonomous Reasoning
+
+```mermaid
+flowchart TD
+    subgraph Ralph["Ralph-Loop: Autonomous Iteration Engine"]
+        R1["Load Goal
+        goal.yaml"] --> R2["Find Best Result
+        scan TRACKER.md"]
+        R2 --> R3{"Goal Met?"}
+
+        R3 -->|"Iter 0: Phase 1
+        95%/33.3ms → MET"| R4["Generate Report
+        (Phase 1 complete)"]
+
+        R4 --> R5["User: Tighten Goal
+        98.9%/0.50ms"]
+
+        R5 --> R6["Gap Analysis
+        acc: need +0.09pp
+        lat: need -0.39ms"]
+
+        R6 --> R7{"Select Strategy"}
+        R7 --> R8["ModelCompression
+        (ternary quantization)"]
+
+        R8 --> R9["Generate Config
+        ternary_cnn [8,16]+FC128"]
+
+        R9 --> R10["Run Experiment
+        20 epochs STE training"]
+
+        R10 --> R11["Log Results
+        99.14% / 0.485ms"]
+
+        R11 --> R12{"Goal Met?"}
+        R12 -->|"Yes"| R13["DONE ✅
+        Generate Final Report"]
+    end
+
+    style R1 fill:#3498db,color:#fff
+    style R4 fill:#2ecc71,color:#fff
+    style R5 fill:#e67e22,color:#fff
+    style R8 fill:#9b59b6,color:#fff
+    style R13 fill:#27ae60,color:#fff,stroke-width:3px
+```
+
+### Accuracy vs Latency Journey
+
+```mermaid
+quadrantChart
+    title Accuracy vs Latency (log scale)
+    x-axis "Fast (low latency)" --> "Slow (high latency)"
+    y-axis "Low accuracy" --> "High accuracy"
+    quadrant-1 "Target Zone"
+    quadrant-2 "Accurate but slow"
+    quadrant-3 "Bad"
+    quadrant-4 "Fast but inaccurate"
+    "ternary v3": [0.15, 0.92]
+    "big-cnn": [0.12, 0.85]
+    "tiny-cnn": [0.25, 0.88]
+    "depthwise": [0.30, 0.78]
+    "wide-fc": [0.55, 0.70]
+    "tiny-fc": [0.60, 0.68]
+    "deep-fc": [0.50, 0.62]
+    "minimal-cnn": [0.80, 0.75]
+    "micro-cnn": [0.82, 0.65]
+```
+
+---
+
 ## Phase 1: Architecture Sweep
 
 > [!info] Timeline
