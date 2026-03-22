@@ -1,46 +1,57 @@
-task: mnist_arch_search
+task: mnist_arch_search_v2
 dataset: MNIST
 constraint:
-  fps: 30
+  fps: 2000
   device: cpu
   batch_size: 1
-  max_latency_ms: 33.3
+  max_latency_ms: 0.50
 search:
   parallel_workers: 8
   metric: accuracy
   budget: 600s
   candidates:
-    - name: tiny-fc
-      type: fc
-      layers: [784, 128, 10]
-    - name: tiny-cnn
-      type: cnn
-      channels: [1, 8, 16]
-      fc: [256, 10]
-    - name: depthwise-cnn
-      type: depthwise
-      channels: [1, 8, 16]
-      fc: [128, 10]
-    - name: minimal-cnn
-      type: cnn
-      channels: [1, 4, 8]
-      fc: [64, 10]
-    - name: wide-fc
-      type: fc
-      layers: [784, 256, 64, 10]
-    - name: deep-fc
-      type: fc
-      layers: [784, 128, 64, 32, 10]
-    - name: big-cnn
+    # big-cnn baseline — 98.81% @ 0.40ms in 5ep. More epochs should push past 98.9%
+    - name: big-cnn-10ep
       type: cnn
       channels: [1, 16, 32]
       fc: [512, 10]
-    - name: micro-cnn
+    # wider big-cnn — more capacity for accuracy
+    - name: wide-big-cnn
       type: cnn
-      channels: [1, 4]
-      fc: [48, 10]
+      channels: [1, 32, 64]
+      fc: [512, 10]
+    # big-cnn with larger FC head
+    - name: big-cnn-fc1024
+      type: cnn
+      channels: [1, 16, 32]
+      fc: [1024, 10]
+    # deeper 3-layer CNN — more conv layers for features
+    - name: deep-cnn-3layer
+      type: cnn
+      channels: [1, 16, 32, 64]
+      fc: [256, 10]
+    # medium-wide CNN — between tiny and big
+    - name: medium-cnn
+      type: cnn
+      channels: [1, 16, 32]
+      fc: [256, 10]
+    # extra-wide CNN
+    - name: xwide-cnn
+      type: cnn
+      channels: [1, 32, 64]
+      fc: [256, 10]
+    # big-cnn with two FC layers
+    - name: big-cnn-2fc
+      type: cnn
+      channels: [1, 16, 32]
+      fc: [512, 128, 10]
+    # original big-cnn for reference
+    - name: big-cnn-ref
+      type: cnn
+      channels: [1, 16, 32]
+      fc: [512, 10]
 train:
-  epochs: 5
+  epochs: 10
   lr: 0.001
   optimizer: adam
   seed: 42

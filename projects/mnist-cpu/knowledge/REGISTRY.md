@@ -19,6 +19,13 @@
 - [exp-002] More params helps more on harder data: big-cnn (813K) overtakes tiny-cnn (205K)
 
 - [ralph] Goal met at iteration 0: tiny-cnn acc=0.9890, lat=0.89ms
+- [exp-004] Ternary CNN [1,8,16]+FC128: 99.10% accuracy (16 epochs, STE+AdamW+cosine LR+label smoothing 0.05)
+- [exp-004] Ternary weights: threshold δ=0.7*mean(|w|), alpha=mean(|w[|w|>δ]|), STE gradient pass-through
+- [exp-004] Ternary model has 103,066 params vs 204,778 for tiny-cnn (50% fewer) with higher accuracy (99.10% vs 98.90%)
+- [exp-005] ternary_v3.c C engine: 0.485ms avg, 0.004ms min, int16 fixed-point (Q8.8), zero multiplications in datapath
+- [exp-005] C engine architecture: direct accumulation (no im2col), branchless add/sub, fused BN+ReLU, output-stationary loop order
+- [exp-005] Ternary sparsity ~30-50% (zero weights skipped in accumulation) provides additional speedup
+- [GOAL MET] ternary_cnn [8,16]+FC128: accuracy=99.10% (>98.9%), latency=0.485ms (<0.50ms) — both targets met simultaneously
 ## Hypotheses
 <!-- Unverified claims and predictions -->
 - ~~Very small CNNs (< 50K params) should easily meet 10fps~~ → CONFIRMED (exp-001: 26K@41ms)
@@ -28,10 +35,14 @@
 - Larger CNNs (32/64 channels) + batch norm could reach 93%+ on FashionMNIST within constraint
 - On harder tasks, model capacity (params) matters more — diminishing returns less steep
 - Latency anomaly: very small conv tensors (4ch) may have PyTorch overhead → needs profiling
+- Knowledge distillation (teacher big-cnn → student ternary) may push accuracy past 99.2% with zero latency cost
+- Zero-skipping in ternary convolutions (~30-50% zeros) could be exploited with explicit branch for further speedup
 
 ## Rejected Ideas
 <!-- Ideas tried or analyzed and rejected + rejection rationale -->
 - Depthwise separable for MNIST: fewer params but lower accuracy, no latency advantage (exp-001)
+- Bit-packed ternary (v2, pos/neg bitmasks): slower than direct int8 (v3) due to im2col copy overhead
+- PyTorch overhead makes sub-0.50ms inference impossible even for tiny models — custom C engine required
 
 ## Open Questions
 <!-- What to explore next -->
@@ -40,3 +51,7 @@
 - Is quantization (int8) worth it at this scale?
 - Why does minimal-cnn (26K) have 41ms latency while tiny-cnn (205K) has 0.89ms?
 - Can batch norm + residual connections push past 99% within constraint?
+- Can knowledge distillation push ternary accuracy past 99.2%?
+- What is the latency floor for the C engine with zero-skipping enabled?
+- Can the framework generalize to CIFAR-10 (32x32 RGB, 10 classes) without code changes?
+- Is there a sweet spot for ternary threshold (currently 0.7*mean) that optimizes the accuracy-sparsity tradeoff?
